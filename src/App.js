@@ -7,27 +7,68 @@ function App() {
   const [list, setList] = useState([])
   const [isEditing, setIsEditing] = useState(false)
   const [editID, setEditID] = useState(null)
-  const [alert, setAlert] = useState({show: false, msg: '', type: ''})
+  const [alert, setAlert] = useState({
+    show: false,
+    msg: '',
+    type: ''
+  })
 
   const handleSubmit = (e) => {
     e.preventDefault()
     if (!name) {
       // display alert
+      showAlert(true, 'danger', 'please enter value')
     }
     else if (name && isEditing) {
       //deal with edit
+      setList(list.map((item) => {
+        if (item.id === editID) {
+          return {...item, title:name}
+        }
+        return item
+      }))
+      //cleanup
+      setIsEditing(false)
+      setEditID(null)
+      setName('')
+      showAlert(true, 'success', 'value changed')
     }
     else {
-      // show alert
+      showAlert(true, 'success', 'item added to the list')
       const newItem = {id: new Date().getTime().toString(), title: name}
       setList([...list, newItem]) // get previous state items with ...list, then add new item
-      setName('')
+      setName('') // clear input
     }
+  }
+
+  const showAlert = (show=false, type="", msg="") => {
+    setAlert({show, type, msg})
+  }
+
+  const clearList = () => {
+    showAlert(true, 'danger', 'empty list')
+    setList([])
+  }
+
+  const removeItem = (id) => {
+    showAlert(true, 'danger', 'item removed')
+    setList(list.filter((item) => {
+      return item.id !== id
+    }))
+  }
+
+  const editItem = (id) => {
+    const specificItem = list.find((item) => {
+      return item.id === id
+    })
+    setIsEditing(true)
+    setEditID(id)
+    setName(specificItem.title)
   }
 
   return <section className="section-center">
     <form className='grocery-form' onSubmit={handleSubmit}>
-      {alert.show && <Alert />}
+      {alert.show && <Alert {...alert} removeAlert={showAlert} list={list}/>}
       <h3>Grocery Bud</h3>
       <div className="form-control">
         <input type="text" className='grocery' placeholder='e.g. bananas' value={name} onChange={(e) => {
@@ -38,10 +79,14 @@ function App() {
         </button>
       </div>
     </form>
-    <div className='grocery-container'>
-      <List items={list}/>
-      <button className="clear-btn">clear items</button>
-    </div>
+    {
+      list.length > 0 && (
+        <div className='grocery-container'>
+          <List items={list} removeItem={removeItem} editItem={editItem}/>
+          <button className="clear-btn" onClick={clearList}>clear items</button>
+        </div>
+      )
+    }
   </section>
 }
 
